@@ -7,7 +7,7 @@
 
 using namespace std::chrono_literals;
 
-bool exiting = false;
+std::atomic<bool> exiting = false;
 std::condition_variable cv;
 std::mutex cv_mutex;
 
@@ -32,7 +32,7 @@ int main() {
 
     {
         std::unique_lock lock(cv_mutex);
-        cv.wait(lock, [] { return exiting; });
+        cv.wait(lock, [] { return exiting.load(); });
     }
 
     spdlog::info("Exiting");
