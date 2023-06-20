@@ -1,0 +1,60 @@
+cmake_minimum_required(VERSION 3.0)
+
+set(PROJECT jellyfin-qbittorrent)
+set(VERSION 0.1)
+set(PRJ_VER ${PROJECT}-${VERSION})
+
+# --- Configuration ---
+
+set(CMAKE_CXX_STANDARD 23)
+set(CMAKE_CXX_STANDARD_REQUIRED True)
+
+# Qt variables
+set(CMAKE_AUTOMOC ON)
+set(CMAKE_AUTOUIC ON)
+set(CMAKE_AUTOUIC_SEARCH_PATHS src/ui)
+
+add_compile_options($<$<CONFIG:Debug>:-DDEBUG>$<$<CONFIG:Release>:-DRELEASE>)
+
+if (WIN32)
+    add_compile_options(-DWINDOWS)
+endif (WIN32)
+
+if (UNIX)
+    add_compile_options(-DLINUX)
+endif (UNIX)
+
+# --- Project ---
+
+project(
+    ${PROJECT}
+    VERSION ${VERSION}
+    LANGUAGES CXX
+)
+
+set(
+    SRC
+    src/main.cpp
+)
+
+add_executable(${PROJECT} ${SRC})
+
+target_include_directories(
+    ${PROJECT}
+    PRIVATE src
+)
+
+find_package(nlohmann_json CONFIG REQUIRED)
+find_package(spdlog CONFIG REQUIRED)
+
+target_link_libraries(
+    ${PROJECT}
+    PRIVATE nlohmann_json::nlohmann_json
+    PRIVATE spdlog::spdlog
+)
+
+if (WIN32)
+    if (CMAKE_BUILD_TYPE STREQUAL "Release")
+        set_property(TARGET ${PROJECT} PROPERTY WIN32_EXECUTABLE true)
+    endif()
+endif()

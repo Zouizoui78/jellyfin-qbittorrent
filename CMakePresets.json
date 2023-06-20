@@ -1,0 +1,48 @@
+{
+    "version": 3,
+    "configurePresets": [
+        {
+            "name": "base",
+            "hidden": true,
+            "generator": "Ninja",
+            "binaryDir": "${sourceDir}/build/${presetName}",
+            "installDir": "${sourceDir}/dist/${presetName}",
+            "architecture": { "value": "x64", "strategy": "external" },
+            "cacheVariables": {
+                "CMAKE_TOOLCHAIN_FILE": "$env{VCPKG_ROOT}/scripts/buildsystems/vcpkg.cmake"
+            }
+        },
+        {
+            "name": "debug",
+            "inherits": ["base"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Debug"
+            }
+        },
+        {
+            "name": "release",
+            "inherits": ["base"],
+            "cacheVariables": {
+                "CMAKE_BUILD_TYPE": "Release"
+            }
+        },
+        {
+            "name": "basewin",
+            "hidden": true,
+            "inherits": ["base"],
+            "cacheVariables": {
+                "CMAKE_CXX_COMPILER": "cl.exe",
+                "VCPKG_HOST_TRIPLET": "x64-windows-static-md",
+                "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
+            }
+        },
+        {
+            "name": "debugwin",
+            "inherits": ["basewin", "debug"]
+        },
+        {
+            "name": "releasewin",
+            "inherits": ["basewin", "release"]
+        }
+    ]
+}
