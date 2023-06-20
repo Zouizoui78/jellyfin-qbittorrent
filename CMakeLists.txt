@@ -9,11 +9,6 @@ set(PRJ_VER ${PROJECT}-${VERSION})
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
-# Qt variables
-set(CMAKE_AUTOMOC ON)
-set(CMAKE_AUTOUIC ON)
-set(CMAKE_AUTOUIC_SEARCH_PATHS src/ui)
-
 add_compile_options($<$<CONFIG:Debug>:-DDEBUG>$<$<CONFIG:Release>:-DRELEASE>)
 
 if (WIN32)
@@ -35,6 +30,7 @@ project(
 set(
     SRC
     src/main.cpp
+    src/Monitor.cpp
 )
 
 add_executable(${PROJECT} ${SRC})
@@ -44,11 +40,13 @@ target_include_directories(
     PRIVATE src
 )
 
+find_package(httplib CONFIG REQUIRED)
 find_package(nlohmann_json CONFIG REQUIRED)
 find_package(spdlog CONFIG REQUIRED)
 
 target_link_libraries(
     ${PROJECT}
+    PRIVATE httplib::httplib
     PRIVATE nlohmann_json::nlohmann_json
     PRIVATE spdlog::spdlog
 )
