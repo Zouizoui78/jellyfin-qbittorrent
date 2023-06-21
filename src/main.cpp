@@ -28,6 +28,11 @@ int main() {
     signal(SIGTERM, signal_handler_caller);
 
     Monitor m;
+    if (!m.is_ok()) {
+        spdlog::error("Monitor initialization failed");
+        return 1;
+    }
+
     spdlog::info("Waiting for requests...");
 
     {
