@@ -69,6 +69,10 @@ void Monitor::resume_torrents() {
 }
 
 void Monitor::manage_torrents(const std::string &method) {
+#ifdef DEBUG
+    spdlog::debug("Sending POST to /api/v2/torrents/" + method);
+    return;
+#endif
     Params p;
     p.emplace("hashes", "all");
     auto res = _qbittorrent_client->Post("/api/v2/torrents/" + method, p);
@@ -85,7 +89,7 @@ void Monitor::start_jellyfin_monitoring() {
     spdlog::debug("Starting jellyfin monitoring");
     _jellyfin_monitor_thread = std::jthread([this] {
         while (_jellyfin_sessions_active && !_exiting) {
-            std::unique_lock lock(_jellyfin_monitor_mutex);
+            std::unique_lock lock(_monitor_mutex);
             _jellyfin_monitor_cv.wait_for(lock, 5s, [this] { return _exiting.load(); });
 
             if (_exiting) {
@@ -104,19 +108,16 @@ void Monitor::stop_jellyfin_monitoring() {
 }
 
 void Monitor::monitor_jellyfin() {
+    // _monitor_mutex is locked here
     spdlog::debug("Monitoring jellyfin");
     auto sessions = get_jellyfin_sessions();
-    if (sessions.is_discarded()) {
-        spdlog::error("Failed to parse json from jellyfin");
+    if (sessions.is_null()) {
         return;
     }
 
     if (sessions.empty()) {
         _jellyfin_sessions_active = false;
-        {
-            std::lock_guard lock(_qbittorrent_mutex);
-            resume_torrents();
-        }
+        resume_torrents();
     }
 }
 
@@ -124,10 +125,19 @@ json Monitor::get_jellyfin_sessions() {
     auto res = _jellyfin_client->Get("/Sessions?api_key=" + _jellyfin_api_key);
     if (auto err = res.error(); err != Error::Success) {
         spdlog::error("Failed to get jellyfin sessions : {}", to_string(err));
-        return json::value_t::discarded;
+        return json();
     }
-    else {
-        return json::parse(res.value().body, nullptr, false);
+    else if (res.value().status == 401) {
+        spdlog::error("Failed to authenticate to jellyfin API, check API key");
+        return json();
+    }
+
+    try {
+        return json::parse(res.value().body);
+    }
+    catch (json::parse_error &e) {
+        spdlog::error("Failed to parse json from jellyfin : {}", e.what());
+        return json();
     }
 }
 
@@ -138,17 +148,16 @@ void Monitor::register_server_routes() {
     });
 
     _server.Post("/api/session_start", [this](const Request &req, Response &res) {
+        std::lock_guard lock(_monitor_mutex);
+
         if (_jellyfin_sessions_active.load()) {
             return;
         }
 
         spdlog::info("Jellyfin session start");
         _jellyfin_sessions_active = true;
-        {
-            std::lock_guard lock(_qbittorrent_mutex);
-            pause_torrents();
-            start_jellyfin_monitoring();
-        }
+        pause_torrents();
+        start_jellyfin_monitoring();
     });
 
     spdlog::info("Registered HTTP server routes");

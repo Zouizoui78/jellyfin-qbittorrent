@@ -27,7 +27,6 @@ private:
     void pause_torrents();
     void resume_torrents();
     void manage_torrents(const std::string &method);
-    std::mutex _qbittorrent_mutex;
 
     std::string _qbittorrent_addr; // from environement
     std::shared_ptr<httplib::Client> _qbittorrent_client;
@@ -42,7 +41,7 @@ private:
     std::atomic<bool> _jellyfin_sessions_active = false;
     std::jthread _jellyfin_monitor_thread;
     std::condition_variable _jellyfin_monitor_cv;
-    std::mutex _jellyfin_monitor_mutex;
+    std::mutex _monitor_mutex;
 
     std::string _jellyfin_addr; // from environement
     std::shared_ptr<httplib::Client> _jellyfin_client;
