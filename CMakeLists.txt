@@ -11,10 +11,6 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 add_compile_options($<$<CONFIG:Debug>:-DDEBUG>$<$<CONFIG:Release>:-DRELEASE>)
 
-if (WIN32)
-    add_compile_options(-DWINDOWS)
-endif (WIN32)
-
 if (UNIX)
     add_compile_options(-DLINUX)
 endif (UNIX)
@@ -50,9 +46,3 @@ target_link_libraries(
     PRIVATE nlohmann_json::nlohmann_json
     PRIVATE spdlog::spdlog
 )
-
-if (WIN32)
-    if (CMAKE_BUILD_TYPE STREQUAL "Release")
-        set_property(TARGET ${PROJECT} PROPERTY WIN32_EXECUTABLE true)
-    endif()
-endif()

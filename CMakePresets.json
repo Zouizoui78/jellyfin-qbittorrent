@@ -25,24 +25,6 @@
             "cacheVariables": {
                 "CMAKE_BUILD_TYPE": "Release"
             }
-        },
-        {
-            "name": "basewin",
-            "hidden": true,
-            "inherits": ["base"],
-            "cacheVariables": {
-                "CMAKE_CXX_COMPILER": "cl.exe",
-                "VCPKG_HOST_TRIPLET": "x64-windows-static-md",
-                "VCPKG_TARGET_TRIPLET": "x64-windows-static-md"
-            }
-        },
-        {
-            "name": "debugwin",
-            "inherits": ["basewin", "debug"]
-        },
-        {
-            "name": "releasewin",
-            "inherits": ["basewin", "release"]
         }
     ]
 }
