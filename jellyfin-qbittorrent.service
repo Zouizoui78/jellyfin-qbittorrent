@@ -1,0 +1,13 @@
+[Unit]
+Description=Pause/resume qbittorrent depending on Jellyfin activity
+
+[Service]
+ExecStart=/opt/jellyfin-qbittorrent/jellyfin-qbittorrent
+WorkingDirectory=/opt/jellyfin-qbittorrent
+
+Environment=QBITTORRENT_ADDRESS="qbittorrent address here"
+Environment=JELLYFIN_ADDRESS="jellyfin address here"
+Environment=JELLYFIN_API_KEY=jellyfin api key here
+
+[Install]
+WantedBy=multi-user.target
