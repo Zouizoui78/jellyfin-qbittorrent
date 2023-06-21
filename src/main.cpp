@@ -23,6 +23,7 @@ int main() {
     #ifdef DEBUG
     spdlog::set_level(spdlog::level::debug);
     #endif
+    spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%f] [%5t] [%^%l%$] %v");
 
     signal(SIGINT, signal_handler);
     signal(SIGTERM, signal_handler);
