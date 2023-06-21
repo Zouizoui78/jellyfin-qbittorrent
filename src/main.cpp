@@ -11,7 +11,7 @@ std::atomic<bool> exiting = false;
 std::condition_variable cv;
 std::mutex cv_mutex;
 
-void signal_handler_caller(int signal) {
+void signal_handler(int signal) {
     std::cout << "Received signal " << strsignal(signal) << std::endl;
     if (signal == SIGINT || signal == SIGTERM) {
         exiting = true;
@@ -24,8 +24,8 @@ int main() {
     spdlog::set_level(spdlog::level::debug);
     #endif
 
-    signal(SIGINT, signal_handler_caller);
-    signal(SIGTERM, signal_handler_caller);
+    signal(SIGINT, signal_handler);
+    signal(SIGTERM, signal_handler);
 
     Monitor m;
     if (!m.is_ok()) {
