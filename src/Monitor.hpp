@@ -29,12 +29,8 @@ private:
     void manage_torrents(const std::string &method);
     std::mutex _qbittorrent_mutex;
 
-#ifdef DEBUG
-    std::string _qbittorrent_addr = "http://puti:8112";
-#else
-    std::string _qbittorrent_addr = "http://localhost:8112";
-#endif
-    httplib::Client _qbittorrent_client;
+    std::string _qbittorrent_addr; // from environement
+    std::shared_ptr<httplib::Client> _qbittorrent_client;
 
 
     // jellyfin related members
@@ -48,12 +44,8 @@ private:
     std::condition_variable _jellyfin_monitor_cv;
     std::mutex _jellyfin_monitor_mutex;
 
-#ifdef DEBUG
-    std::string _jellyfin_addr = "http://puti:8096";
-#else
-    std::string _jellyfin_addr = "http://localhost:8096";
-#endif
-    httplib::Client _jellyfin_client;
+    std::string _jellyfin_addr; // from environement
+    std::shared_ptr<httplib::Client> _jellyfin_client;
     std::string _jellyfin_api_key; // from environement
 
     // http members

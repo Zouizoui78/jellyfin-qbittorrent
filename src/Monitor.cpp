@@ -5,10 +5,7 @@ using namespace httplib;
 using json = nlohmann::json;
 using namespace std::chrono_literals;
 
-Monitor::Monitor() :
-    _qbittorrent_client(_qbittorrent_addr),
-    _jellyfin_client(_jellyfin_addr)
-{
+Monitor::Monitor() {
     _is_ok = init();
 }
 
@@ -17,13 +14,31 @@ Monitor::~Monitor() {
 }
 
 bool Monitor::init() {
-    auto api_key = std::getenv("JELLYFIN_API_KEY");
-    if (api_key == nullptr) {
+    auto env = std::getenv("QBITTORRENT_ADDRESS");
+    if (env == nullptr) {
+        spdlog::error("Failed to read env var QBITTORRENT_ADDRESS. Make sure it's defined.");
+        return false;
+    }
+    _qbittorrent_addr = std::string(env);
+    _qbittorrent_client = std::make_shared<Client>(_qbittorrent_addr);
+    spdlog::info("qbittorrent address : {}", _qbittorrent_addr);
+
+    env = std::getenv("JELLYFIN_ADDRESS");
+    if (env == nullptr) {
+        spdlog::error("Failed to read env var JELLYFIN_ADDRESS. Make sure it's defined.");
+        return false;
+    }
+    _jellyfin_addr = std::string(env);
+    _jellyfin_client = std::make_shared<Client>(_jellyfin_addr);
+    spdlog::info("Jellyfin address : {}", _jellyfin_addr);
+
+    env = std::getenv("JELLYFIN_API_KEY");
+    if (env == nullptr) {
         spdlog::error("Failed to read env var JELLYFIN_API_KEY. Make sure it's defined.");
         return false;
     }
-
-    _jellyfin_api_key = std::string(api_key);
+    _jellyfin_api_key = std::string(env);
+    spdlog::info("Jellyfin API key : {}", _jellyfin_api_key);
 
     register_server_routes();
     _server_thread = std::jthread([this] {
@@ -56,7 +71,7 @@ void Monitor::resume_torrents() {
 void Monitor::manage_torrents(const std::string &method) {
     Params p;
     p.emplace("hashes", "all");
-    auto res = _qbittorrent_client.Post("/api/v2/torrents/" + method, p);
+    auto res = _qbittorrent_client->Post("/api/v2/torrents/" + method, p);
 
     if (auto err = res.error(); err != Error::Success) {
         spdlog::error(to_string(err));
@@ -106,7 +121,7 @@ void Monitor::monitor_jellyfin() {
 }
 
 json Monitor::get_jellyfin_sessions() {
-    auto res = _jellyfin_client.Get("/Sessions?api_key=" + _jellyfin_api_key);
+    auto res = _jellyfin_client->Get("/Sessions?api_key=" + _jellyfin_api_key);
     if (auto err = res.error(); err != Error::Success) {
         spdlog::error("Failed to get jellyfin sessions : {}", to_string(err));
         return json::value_t::discarded;
