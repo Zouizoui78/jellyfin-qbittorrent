@@ -32,8 +32,16 @@
             "cwd": "${workspaceFolder}",
             "environment": [
                 {
+                    "name": "QBITTORRENT_ADDRESS",
+                    "value": "qbittorrent address"
+                },
+                {
+                    "name": "JELLYFIN_ADDRESS",
+                    "value": "jellyfin address"
+                },
+                {
                     "name": "JELLYFIN_API_KEY",
-                    "value": "jellyfin api key here"
+                    "value": "jellyfin api key"
                 }
             ],
             "externalConsole": false,

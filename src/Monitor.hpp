@@ -21,6 +21,7 @@ private:
     httplib::Server _server;
     std::jthread _server_thread;
     void register_server_routes();
+    void post_session_start(const httplib::Request &req, httplib::Response &res);
 
 
     // qbittorrent related members

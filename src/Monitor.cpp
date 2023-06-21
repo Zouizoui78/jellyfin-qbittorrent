@@ -90,13 +90,8 @@ void Monitor::start_jellyfin_monitoring() {
     _jellyfin_monitor_thread = std::jthread([this] {
         while (_jellyfin_sessions_active && !_exiting) {
             std::unique_lock lock(_monitor_mutex);
-            _jellyfin_monitor_cv.wait_for(lock, 5s, [this] { return _exiting.load(); });
-
-            if (_exiting) {
-                break;
-            }
-
             monitor_jellyfin();
+            _jellyfin_monitor_cv.wait_for(lock, 5s, [this] { return _exiting.load(); });
         }
         spdlog::debug("Stopped jellyfin monitoring");
     });
@@ -111,14 +106,12 @@ void Monitor::monitor_jellyfin() {
     // _monitor_mutex is locked here
     spdlog::debug("Monitoring jellyfin");
     auto sessions = get_jellyfin_sessions();
-    if (sessions.is_null()) {
+    if (sessions.is_null() || !sessions.empty()) {
         return;
     }
 
-    if (sessions.empty()) {
-        _jellyfin_sessions_active = false;
-        resume_torrents();
-    }
+    _jellyfin_sessions_active = false;
+    resume_torrents();
 }
 
 json Monitor::get_jellyfin_sessions() {
@@ -148,17 +141,21 @@ void Monitor::register_server_routes() {
     });
 
     _server.Post("/api/session_start", [this](const Request &req, Response &res) {
-        std::lock_guard lock(_monitor_mutex);
-
-        if (_jellyfin_sessions_active.load()) {
-            return;
-        }
-
-        spdlog::info("Jellyfin session start");
-        _jellyfin_sessions_active = true;
-        pause_torrents();
-        start_jellyfin_monitoring();
+        post_session_start(req, res);
     });
 
     spdlog::info("Registered HTTP server routes");
+}
+
+void Monitor::post_session_start(const Request &req, Response &res) {
+    std::lock_guard lock(_monitor_mutex);
+
+    if (_jellyfin_sessions_active.load()) {
+        return;
+    }
+
+    spdlog::debug("Jellyfin session start");
+    _jellyfin_sessions_active = true;
+    pause_torrents();
+    start_jellyfin_monitoring();
 }
