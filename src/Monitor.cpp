@@ -103,9 +103,9 @@ void Monitor::start_jellyfin_monitoring() {
 
             monitor_jellyfin();
         }
-        spdlog::info("Stopped jellyfin monitoring");
+        spdlog::debug("Stopped jellyfin monitoring");
     });
-    spdlog::info("Started jellyfin monitoring");
+    spdlog::debug("Started jellyfin monitoring");
 }
 
 void Monitor::stop_jellyfin_monitoring() {
