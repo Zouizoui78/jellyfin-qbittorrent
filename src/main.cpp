@@ -1,6 +1,4 @@
-#ifdef DEBUG
 #define SPDLOG_ACTIVE_LEVEL SPDLOG_LEVEL_DEBUG
-#endif
 #include "spdlog/spdlog.h"
 
 #include "Monitor.hpp"
@@ -20,9 +18,11 @@ void signal_handler(int signal) {
 }
 
 int main() {
-    #ifdef DEBUG
-    spdlog::set_level(spdlog::level::debug);
-    #endif
+    auto log_level = std::getenv("LOG_LEVEL");
+    if (log_level != nullptr && std::string(log_level) == "DEBUG") {
+        spdlog::set_level(spdlog::level::debug);
+    }
+
     spdlog::set_pattern("[%Y-%m-%d %H:%M:%S.%f] [%5t] [%^%l%$] %v");
 
     signal(SIGINT, signal_handler);
