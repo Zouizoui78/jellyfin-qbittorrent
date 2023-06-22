@@ -5,6 +5,8 @@ using namespace httplib;
 using json = nlohmann::json;
 using namespace std::chrono_literals;
 
+constexpr uint8_t jellyfin_sessions_threshold = 2;
+
 Monitor::Monitor() {
     _is_ok = init();
 }
@@ -61,11 +63,13 @@ bool Monitor::is_ok() const {
 void Monitor::pause_torrents() {
     spdlog::info("Pausing torrents");
     manage_torrents("pause");
+    _torrents_paused = true;
 }
 
 void Monitor::resume_torrents() {
     spdlog::info("Resuming torrents");
     manage_torrents("resume");
+    _torrents_paused = false;
 }
 
 void Monitor::manage_torrents(const std::string &method) {
@@ -88,30 +92,42 @@ void Monitor::manage_torrents(const std::string &method) {
 void Monitor::start_jellyfin_monitoring() {
     spdlog::debug("Starting jellyfin monitoring");
     _jellyfin_monitor_thread = std::jthread([this] {
-        while (_jellyfin_sessions_active && !_exiting) {
+        while (!_exiting && _jellyfin_sessions_active > 0) {
             std::unique_lock lock(_monitor_mutex);
+            _jellyfin_monitor_cv.wait_for(lock, 1s, [this] { return _exiting.load(); });
+
+            if (_exiting) {
+                spdlog::debug("Breaking from jellyfin monitor loop");
+                break;
+            }
+
             monitor_jellyfin();
-            _jellyfin_monitor_cv.wait_for(lock, 5s, [this] { return _exiting.load(); });
         }
-        spdlog::debug("Stopped jellyfin monitoring");
+        spdlog::info("Stopped jellyfin monitoring");
     });
-    spdlog::debug("Started jellyfin monitoring");
+    spdlog::info("Started jellyfin monitoring");
 }
 
 void Monitor::stop_jellyfin_monitoring() {
+    spdlog::debug("Stopping jellyfin monitor");
     _jellyfin_monitor_cv.notify_one();
 }
 
 void Monitor::monitor_jellyfin() {
     // _monitor_mutex is locked here
-    spdlog::debug("Monitoring jellyfin");
     auto sessions = get_jellyfin_sessions();
-    if (sessions.is_null() || !sessions.empty()) {
+    if (sessions.is_null()) {
         return;
     }
 
-    _jellyfin_sessions_active = false;
-    resume_torrents();
+    _jellyfin_sessions_active = sessions.size();
+    spdlog::debug("{} active sessions", _jellyfin_sessions_active.load());
+    if (_torrents_paused && _jellyfin_sessions_active < jellyfin_sessions_threshold) {
+        resume_torrents();
+    }
+    else if (!_torrents_paused && _jellyfin_sessions_active >= jellyfin_sessions_threshold) {
+        pause_torrents();
+    }
 }
 
 json Monitor::get_jellyfin_sessions() {
@@ -150,12 +166,9 @@ void Monitor::register_server_routes() {
 void Monitor::post_session_start(const Request &req, Response &res) {
     std::lock_guard lock(_monitor_mutex);
 
-    if (_jellyfin_sessions_active.load()) {
-        return;
-    }
-
     spdlog::debug("Jellyfin session start");
-    _jellyfin_sessions_active = true;
-    pause_torrents();
-    start_jellyfin_monitoring();
+    _jellyfin_sessions_active++;
+    if (_jellyfin_sessions_active == 1) {
+        start_jellyfin_monitoring();
+    }
 }
