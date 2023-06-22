@@ -40,7 +40,7 @@ private:
     void monitor_jellyfin();
     nlohmann::json get_jellyfin_sessions();
 
-    std::atomic<uint> _jellyfin_sessions_active = 0;
+    std::atomic<bool> _jellyfin_sessions_active = false;
     std::jthread _jellyfin_monitor_thread;
     std::condition_variable _jellyfin_monitor_cv;
     std::mutex _monitor_mutex;
