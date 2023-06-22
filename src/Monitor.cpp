@@ -92,17 +92,7 @@ void Monitor::manage_torrents(const std::string &method) {
 void Monitor::start_jellyfin_monitoring() {
     spdlog::debug("Starting jellyfin monitoring");
     _jellyfin_monitor_thread = std::jthread([this] {
-        while (!_exiting && _jellyfin_sessions_active) {
-            std::unique_lock lock(_monitor_mutex);
-            _jellyfin_monitor_cv.wait_for(lock, 2s, [this] { return _exiting.load(); });
-
-            if (_exiting) {
-                spdlog::debug("Breaking from jellyfin monitor loop");
-                break;
-            }
-
-            monitor_jellyfin();
-        }
+        loop_jellyfin_monitoring();
         spdlog::debug("Stopped jellyfin monitoring");
     });
     spdlog::debug("Started jellyfin monitoring");
@@ -111,6 +101,20 @@ void Monitor::start_jellyfin_monitoring() {
 void Monitor::stop_jellyfin_monitoring() {
     spdlog::debug("Stopping jellyfin monitor");
     _jellyfin_monitor_cv.notify_one();
+}
+
+void Monitor::loop_jellyfin_monitoring() {
+    while (!_exiting && _jellyfin_sessions_active) {
+        std::unique_lock lock(_monitor_mutex);
+        _jellyfin_monitor_cv.wait_for(lock, 2s, [this] { return _exiting.load(); });
+
+        if (_exiting) {
+            spdlog::debug("Breaking from jellyfin monitor loop");
+            break;
+        }
+
+        monitor_jellyfin();
+    }
 }
 
 void Monitor::monitor_jellyfin() {

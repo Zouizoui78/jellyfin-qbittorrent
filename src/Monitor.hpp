@@ -37,6 +37,7 @@ private:
     // jellyfin related members
     void start_jellyfin_monitoring();
     void stop_jellyfin_monitoring();
+    void loop_jellyfin_monitoring();
     void monitor_jellyfin();
     nlohmann::json get_jellyfin_sessions();
 
