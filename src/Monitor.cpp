@@ -94,7 +94,7 @@ void Monitor::start_jellyfin_monitoring() {
     _jellyfin_monitor_thread = std::jthread([this] {
         while (!_exiting && _jellyfin_sessions_active) {
             std::unique_lock lock(_monitor_mutex);
-            _jellyfin_monitor_cv.wait_for(lock, 1s, [this] { return _exiting.load(); });
+            _jellyfin_monitor_cv.wait_for(lock, 2s, [this] { return _exiting.load(); });
 
             if (_exiting) {
                 spdlog::debug("Breaking from jellyfin monitor loop");
