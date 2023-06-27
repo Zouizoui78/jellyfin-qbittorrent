@@ -82,7 +82,7 @@ void Monitor::manage_torrents(const std::string &method) {
     auto res = _qbittorrent_client->Post("/api/v2/torrents/" + method, p);
 
     if (auto err = res.error(); err != Error::Success) {
-        spdlog::error(to_string(err));
+        spdlog::error(httplib::to_string(err));
     }
     else {
         spdlog::debug("qbitorrent : {} {}", res.value().status, res.value().body);
@@ -140,7 +140,7 @@ void Monitor::monitor_jellyfin() {
 json Monitor::get_jellyfin_sessions() {
     auto res = _jellyfin_client->Get("/Sessions?api_key=" + _jellyfin_api_key);
     if (auto err = res.error(); err != Error::Success) {
-        spdlog::error("Failed to get jellyfin sessions : {}", to_string(err));
+        spdlog::error("Failed to get jellyfin sessions : {}", httplib::to_string(err));
         return json();
     }
     else if (res.value().status == 401) {

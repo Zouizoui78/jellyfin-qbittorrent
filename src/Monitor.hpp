@@ -49,8 +49,6 @@ private:
     std::string _jellyfin_addr; // from environement
     std::shared_ptr<httplib::Client> _jellyfin_client;
     std::string _jellyfin_api_key; // from environement
-
-    // http members
 };
 
 #endif // MONITOR_HPP
