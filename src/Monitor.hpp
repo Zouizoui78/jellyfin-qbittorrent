@@ -21,7 +21,7 @@ private:
     httplib::Server _server;
     std::jthread _server_thread;
     void register_server_routes();
-    void post_session_start(const httplib::Request &req, httplib::Response &res);
+    void post_playback_start(const httplib::Request &req, httplib::Response &res);
 
 
     // qbittorrent related members
@@ -40,6 +40,7 @@ private:
     void loop_jellyfin_monitoring();
     void monitor_jellyfin();
     nlohmann::json get_jellyfin_sessions();
+    uint32_t count_jellyfin_active_sessions();
 
     std::atomic<bool> _jellyfin_sessions_active = false;
     std::jthread _jellyfin_monitor_thread;

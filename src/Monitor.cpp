@@ -119,12 +119,7 @@ void Monitor::loop_jellyfin_monitoring() {
 
 void Monitor::monitor_jellyfin() {
     // _monitor_mutex is locked here
-    auto sessions = get_jellyfin_sessions();
-    if (sessions.is_null()) {
-        return;
-    }
-
-    auto n_sessions = sessions.size();
+    auto n_sessions = count_jellyfin_active_sessions();
     spdlog::debug("{} active sessions", n_sessions);
 
     if (_torrents_paused && n_sessions < jellyfin_sessions_threshold) {
@@ -157,20 +152,36 @@ json Monitor::get_jellyfin_sessions() {
     }
 }
 
+uint32_t Monitor::count_jellyfin_active_sessions() {
+    auto sessions = get_jellyfin_sessions();
+    if (sessions.is_null() || sessions.size() == 0) {
+        return 0;
+    }
+
+    uint32_t ret = 0;
+
+    for (const auto &session : sessions) {
+        if (session.contains("NowPlayingItem")) {
+            ret++;
+        }
+    }
+    return ret;
+}
+
 void Monitor::register_server_routes() {
     _server.set_pre_routing_handler([this](const Request &req, Response &res) {
         spdlog::debug("{} {}", req.method, req.path);
         return Server::HandlerResponse::Unhandled;
     });
 
-    _server.Post("/api/session_start", [this](const Request &req, Response &res) {
-        post_session_start(req, res);
+    _server.Post("/api/playback_start", [this](const Request &req, Response &res) {
+        post_playback_start(req, res);
     });
 
     spdlog::info("Registered HTTP server routes");
 }
 
-void Monitor::post_session_start(const Request &req, Response &res) {
+void Monitor::post_playback_start(const Request &req, Response &res) {
     std::lock_guard lock(_monitor_mutex);
 
     if (!_jellyfin_sessions_active) {
